@@ -34,6 +34,9 @@ def read_triage_table(triage_table_path):
     vital_rename_dict = {vital: '_'.join(['triage', vital]) for vital in ['temperature', 'heartrate', 'o2sat', 'sbp', 'dbp', 'pain', 'acuity']}
     df_triage.rename(vital_rename_dict, axis=1)
     return df_triage
+def read_diagnoses_table(diagnoses_table_path):
+    df_diagnoses = pd.read_csv(diagnoses_table_path)
+    return df_diagnoses
 
 def merge_edstays_patients_on_subject(df_edstays,df_patients):
     df_edstays = pd.merge(df_edstays, df_patients[['subject_id', 'anchor_age', 'gender', 'anchor_year','dod']], on = ['subject_id'], how='left')
@@ -85,7 +88,7 @@ def add_outcome_icu_transfer(df_master, df_icustays, icu_transfer_timerange):
 
 
 def generate_past_ed_visits(df_master, past_ed_visits_timerange):
-    df_master = df_master.sort_values(['subject_id', 'intime']).reset_index()
+    #df_master = df_master.sort_values(['subject_id', 'intime']).reset_index()
     
     timerange_delta = timedelta(days=past_ed_visits_timerange)
     n_ed = [0 for _ in range(len(df_master))]
