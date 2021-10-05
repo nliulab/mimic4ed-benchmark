@@ -31,12 +31,24 @@ def read_icustays_table(icustays_table_path):
 
 def read_triage_table(triage_table_path):
     df_triage = pd.read_csv(triage_table_path)
-    vital_rename_dict = {vital: '_'.join(['triage', vital]) for vital in ['temperature', 'heartrate', 'o2sat', 'sbp', 'dbp', 'pain', 'acuity']}
-    df_triage.rename(vital_rename_dict, axis=1)
+    vital_rename_dict = {vital: '_'.join(['triage', vital]) for vital in ['temperature', 'heartrate', 'resprate', 'o2sat', 'sbp', 'dbp', 'pain', 'acuity']}
+    df_triage.rename(vital_rename_dict, axis=1, inplace=True)
     return df_triage
+
 def read_diagnoses_table(diagnoses_table_path):
     df_diagnoses = pd.read_csv(diagnoses_table_path)
     return df_diagnoses
+
+def read_vitalsign_table(vitalsign_table_path):
+    df_vitalsign = pd.read_csv(vitalsign_table_path)
+    vital_rename_dict = {vital: '_'.join(['ed', vital]) for vital in
+                         ['temperature', 'heartrate', 'resprate', 'o2sat', 'sbp', 'dbp', 'rhythm', 'pain']}
+    df_vitalsign.rename(vital_rename_dict, axis=1, inplace=True)
+    return df_vitalsign
+
+def read_pyxis_table(pyxis_table_path):
+    df_pyxis = pd.read_csv(pyxis_table_path)
+    return df_pyxis
 
 def merge_edstays_patients_on_subject(df_edstays,df_patients):
     df_edstays = pd.merge(df_edstays, df_patients[['subject_id', 'anchor_age', 'gender', 'anchor_year','dod']], on = ['subject_id'], how='left')
@@ -227,4 +239,29 @@ def encode_chief_complaints(df_master, complaint_dict):
     df_encoded_complaint = pd.DataFrame(holder_list, columns = complaint_colnames_list)
 
     df_master = pd.concat([df_master,df_encoded_complaint], axis=1)
+    return df_master
+
+def merge_vitalsign_info_on_edstay(df_master, df_vitalsign):
+    df_vitalsign.sort_values('charttime', inplace=True)
+
+    grouped = df_vitalsign.groupby(['stay_id'])
+    df_vitalsign_max = grouped.max(numeric_only=True)
+    df_vitalsign_min = grouped.min(numeric_only=True)
+    df_vitalsign_median = grouped.median(numeric_only=True)
+    df_vitalsign_mean = grouped.mean(numeric_only=True)
+    df_vitalsign_first = grouped.first(numeric_only=True)
+    df_vitalsign_last = grouped.last(numeric_only=True)
+
+    df_max_min = pd.merge(df_vitalsign_max, df_vitalsign_min, on=['subject_id', 'stay_id'], how='left', suffixes=("_max", "_min"))
+    df_median_mean = pd.merge(df_vitalsign_median, df_vitalsign_mean, on=['subject_id', 'stay_id'], how='left', suffixes=("_median", "_mean"))
+    df_first_last = pd.merge(df_vitalsign_first, df_vitalsign_last, on=['subject_id', 'stay_id'], how='left', suffixes=("_first", "_last"))
+    df_master = pd.merge(df_master, df_max_min, on=['subject_id', 'stay_id'], how='left')
+    df_master = pd.merge(df_master, df_median_mean, on=['subject_id', 'stay_id'], how='left')
+    df_master = pd.merge(df_master, df_first_last, on=['subject_id', 'stay_id'], how='left')
+    return df_master
+
+def merge_medcount_on_edstay(df_master, df_pyxis):
+    grouped = df_pyxis.groupby(['stay_id'])
+    df_medcount = grouped.count()['med_rn'].reset_index().rename({'med_rn': 'ed_medcount'}, axis=1)
+    df_master = pd.merge(df_master, df_medcount, on='stay_id', how='left')
     return df_master
