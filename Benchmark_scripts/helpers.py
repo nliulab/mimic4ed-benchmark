@@ -65,7 +65,7 @@ def merge_edstays_triage_on_subject(df_master ,df_triage):
 def add_age(df_master):
     df_master['in_year'] = df_master['intime'].dt.year
     df_master['age'] = df_master['in_year'] - df_master['anchor_year'] + df_master['anchor_age']
-    df_master.drop(['anchor_age', 'anchor_year', 'in_year'],axis=1, inplace=True)
+    #df_master.drop(['anchor_age', 'anchor_year', 'in_year'],axis=1, inplace=True)
     return df_master
 
 def add_inhospital_mortality(df_master):
