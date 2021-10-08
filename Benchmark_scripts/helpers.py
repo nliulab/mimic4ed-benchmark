@@ -241,27 +241,37 @@ def encode_chief_complaints(df_master, complaint_dict):
     df_master = pd.concat([df_master,df_encoded_complaint], axis=1)
     return df_master
 
-def merge_vitalsign_info_on_edstay(df_master, df_vitalsign):
+def merge_vitalsign_info_on_edstay(df_master, df_vitalsign, options=[]):
     df_vitalsign.sort_values('charttime', inplace=True)
 
     grouped = df_vitalsign.groupby(['stay_id'])
-    df_vitalsign_max = grouped.max(numeric_only=True)
-    df_vitalsign_min = grouped.min(numeric_only=True)
-    df_vitalsign_median = grouped.median(numeric_only=True)
-    df_vitalsign_mean = grouped.mean(numeric_only=True)
-    df_vitalsign_first = grouped.first(numeric_only=True)
-    df_vitalsign_last = grouped.last(numeric_only=True)
 
-    df_max_min = pd.merge(df_vitalsign_max, df_vitalsign_min, on=['subject_id', 'stay_id'], how='left', suffixes=("_max", "_min"))
-    df_median_mean = pd.merge(df_vitalsign_median, df_vitalsign_mean, on=['subject_id', 'stay_id'], how='left', suffixes=("_median", "_mean"))
-    df_first_last = pd.merge(df_vitalsign_first, df_vitalsign_last, on=['subject_id', 'stay_id'], how='left', suffixes=("_first", "_last"))
-    df_master = pd.merge(df_master, df_max_min, on=['subject_id', 'stay_id'], how='left')
-    df_master = pd.merge(df_master, df_median_mean, on=['subject_id', 'stay_id'], how='left')
-    df_master = pd.merge(df_master, df_first_last, on=['subject_id', 'stay_id'], how='left')
+    for option in options:
+        method = getattr(grouped, option, None)
+        assert method is not None, "Invalid option. " \
+                                   "Should be a list of values from 'max', 'min', 'median', 'mean', 'first', 'last'. " \
+                                   "e.g. ['median', 'last']"
+        df_vitalsign_option = method(numeric_only=True)
+        df_vitalsign_option.rename({name: '_'.join([name, option]) for name in
+                                    ['ed_temperature', 'ed_heartrate', 'ed_resprate', 'ed_o2sat', 'ed_sbp', 'ed_dbp', 'ed_pain']},
+                                   axis=1,
+                                   inplace=True)
+        df_master = pd.merge(df_master, df_vitalsign_option, on=['subject_id', 'stay_id'], how='left')
+
     return df_master
 
-def merge_medcount_on_edstay(df_master, df_pyxis):
-    grouped = df_pyxis.groupby(['stay_id'])
-    df_medcount = grouped.count()['med_rn'].reset_index().rename({'med_rn': 'ed_medcount'}, axis=1)
+def merge_med_count_on_edstay(df_master, df_pyxis):
+    df_pyxis_fillna = df_pyxis.copy()
+    df_pyxis_fillna['gsn'].fillna(df_pyxis['name'], inplace=True)
+    grouped = df_pyxis_fillna.groupby(['stay_id'])
+    df_medcount = grouped['gsn'].nunique().reset_index().rename({'gsn': 'n_med'}, axis=1)
+    df_master = pd.merge(df_master, df_medcount, on='stay_id', how='left')
+    return df_master
+
+def merge_medrecon_count_on_edstay(df_master, df_medrecon):
+    df_medrecon_fillna = df_medrecon.copy()
+    df_medrecon_fillna['gsn'].fillna(df_medrecon['name'])
+    grouped = df_medrecon_fillna.groupby(['stay_id'])
+    df_medcount = grouped['gsn'].nunique().reset_index().rename({'gsn': 'n_medrecon'}, axis=1)
     df_master = pd.merge(df_master, df_medcount, on='stay_id', how='left')
     return df_master
