@@ -69,12 +69,9 @@ def commorbidity(df_master, df_diagnoses, df_admissions, timerange):
 
 
 
-    cci= []
-    eci= []
+    df_master['cci'] = None
+    df_master['eci'] = None
     for i, code in enumerate(diagnoses):
-        cci.append(commorbidity_vector(code, versions[i], mapping='charlson'))
-        eci.append(commorbidity_vector(code, versions[i], mapping='elixhauser'))
-
-    df_master.loc[:,'cci'] = cci
-    df_master.loc[:,'eci'] = eci
+        df_master.at[i, 'cci'] = commorbidity_vector(code, versions[i], mapping='charlson')
+        df_master.at[i, 'eci'] = commorbidity_vector(code, versions[i], mapping='elixhauser')
     return df_master
