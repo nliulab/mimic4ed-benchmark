@@ -89,20 +89,20 @@ def add_ed_los(df_master):
     return df_master
 
 
-def add_outcome_icu_transfer(df_master, df_icustays, icu_transfer_timerange):
-    timerange_delta = timedelta(hours = icu_transfer_timerange)
+def add_outcome_icu_transfer(df_master, df_icustays, timerange):
+    timerange_delta = timedelta(hours = timerange)
     df_master_icu = pd.merge(df_master,df_icustays[['subject_id', 'hadm_id', 'intime']], on = ['subject_id', 'hadm_id'], how='left', suffixes=('','_icu'))
     time_diff = (df_master_icu['intime_icu']- df_master_icu['outtime'])
     df_master_icu['time_to_icu_transfer'] = time_diff
-    df_master_icu[''.join(['outcome_icu_transfer_', str(icu_transfer_timerange), 'h'])] = time_diff <= timerange_delta
+    df_master_icu[''.join(['outcome_icu_transfer_', str(timerange), 'h'])] = time_diff <= timerange_delta
     # df_master_icu.drop(['intime_icu', 'time_to_icu_transfer'],axis=1, inplace=True)
     return df_master_icu
 
 
-def generate_past_ed_visits(df_master, past_ed_visits_timerange):
+def generate_past_ed_visits(df_master, timerange):
     #df_master = df_master.sort_values(['subject_id', 'intime']).reset_index()
     
-    timerange_delta = timedelta(days=past_ed_visits_timerange)
+    timerange_delta = timedelta(days=timerange)
     n_ed = [0 for _ in range(len(df_master))]
     
     # Loop through the sorted ED visits
@@ -115,18 +115,18 @@ def generate_past_ed_visits(df_master, past_ed_visits_timerange):
             n_ed[i]+=1
             j-=1
 
-    df_master.loc[:,''.join(['n_ed_', str(past_ed_visits_timerange), "d"])] = n_ed
+    df_master.loc[:,''.join(['n_ed_', str(timerange), "d"])] = n_ed
 
     return df_master
 
-def generate_past_admissions(df_master, df_admissions, past_admissions_timerange):
+def generate_past_admissions(df_master, df_admissions, timerange):
     sorted_df = df_admissions[df_admissions['subject_id'].isin(df_master['subject_id'].unique().tolist())][['subject_id', 'admittime']].copy()
     
     sorted_df.loc[:,'admittime'] = pd.to_datetime(sorted_df['admittime'])
     sorted_df.sort_values(['subject_id', 'admittime'], inplace=True)
     sorted_df.reset_index(drop=True, inplace=True)
 
-    timerange_delta = timedelta(days=past_admissions_timerange)
+    timerange_delta = timedelta(days=timerange)
 
     j_start = 0
     j_end = 0
@@ -150,17 +150,17 @@ def generate_past_admissions(df_master, df_admissions, past_admissions_timerange
             if row['intime']>sorted_df['admittime'][j] and row['intime']-sorted_df['admittime'][j]<=timerange_delta:
                 n_adm[i]+=1
 
-    df_master.loc[:,''.join(['n_hosp_', str(past_admissions_timerange), "d"])] = n_adm
+    df_master.loc[:,''.join(['n_hosp_', str(timerange), "d"])] = n_adm
 
     return df_master
 
 
-def generate_past_icu_visits(df_master, df_icustays, past_icu_visits_timerange):
+def generate_past_icu_visits(df_master, df_icustays, timerange):
     sorted_df = df_icustays[df_icustays['subject_id'].isin(df_master['subject_id'].unique().tolist())][['subject_id', 'intime']].copy()
     sorted_df.sort_values(['subject_id', 'intime'], inplace=True)
     sorted_df.reset_index(drop=True, inplace=True)
 
-    timerange_delta = timedelta(days=past_icu_visits_timerange)
+    timerange_delta = timedelta(days=timerange)
     j_start = 0
     j_end = 0
     prev_subject=None
@@ -183,7 +183,7 @@ def generate_past_icu_visits(df_master, df_icustays, past_icu_visits_timerange):
             if row['intime']>sorted_df['intime'][j] and row['intime']-sorted_df['intime'][j]<=timerange_delta:
                 n_icu[i]+=1
 
-    df_master.loc[:,''.join(['n_icu_', str(past_icu_visits_timerange), "d"])] = n_icu
+    df_master.loc[:,''.join(['n_icu_', str(timerange), "d"])] = n_icu
 
     return df_master
 
