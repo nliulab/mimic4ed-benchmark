@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from datetime import timedelta
 import re
 import os
@@ -103,52 +104,59 @@ def generate_past_ed_visits(df_master, timerange):
     #df_master = df_master.sort_values(['subject_id', 'intime']).reset_index()
     
     timerange_delta = timedelta(days=timerange)
-    n_ed = [0 for _ in range(len(df_master))]
-    
-    # Loop through the sorted ED visits
-    for i, row in df_master.iterrows():
-        if i % 10000 == 0:
-            print('Process: %d/%d' % (i, len(df_master)), end='\r')
-    # count number of subject's ED visits before the current iteration
-        j=i-1
-        while j>=0 and df_master['subject_id'][j] == row['subject_id'] and row['intime']-df_master['intime'][j]<=timerange_delta:
-            n_ed[i]+=1
-            j-=1
+    N = len(df_master)
+    n_ed = [0 for _ in range(N)]
 
-    df_master.loc[:,''.join(['n_ed_', str(timerange), "d"])] = n_ed
+    def get_num_past_ed_visits(df):
+        start = df.index[0]
+        for i in df.index:
+            if i % 10000 == 0 or i == N - 1:
+                print('Process: %d/%d' % (i, N - 1), end='\r')
+            while df.loc[i, 'intime'] - df.loc[start, 'intime'] > timerange_delta:
+                start += 1
+            n_ed[i] = i - start
+
+    grouped = df_master.groupby('subject_id')
+    grouped.apply(get_num_past_ed_visits)
+
+    df_master.loc[:, ''.join(['n_ed_', str(timerange), "d"])] = n_ed
 
     return df_master
 
 def generate_past_admissions(df_master, df_admissions, timerange):
-    sorted_df = df_admissions[df_admissions['subject_id'].isin(df_master['subject_id'].unique().tolist())][['subject_id', 'admittime']].copy()
+    df_admissions_sorted = df_admissions[df_admissions['subject_id'].isin(df_master['subject_id'].unique().tolist())][['subject_id', 'admittime']].copy()
     
-    sorted_df.loc[:,'admittime'] = pd.to_datetime(sorted_df['admittime'])
-    sorted_df.sort_values(['subject_id', 'admittime'], inplace=True)
-    sorted_df.reset_index(drop=True, inplace=True)
+    df_admissions_sorted.loc[:,'admittime'] = pd.to_datetime(df_admissions_sorted['admittime'])
+    df_admissions_sorted.sort_values(['subject_id', 'admittime'], inplace=True)
+    df_admissions_sorted.reset_index(drop=True, inplace=True)
 
     timerange_delta = timedelta(days=timerange)
 
-    j_start = 0
-    j_end = 0
-    prev_subject=None
-    n_adm = [0 for _ in range(len(df_master))]
-    # Loop through ED visits
-    for i, row in df_master.iterrows():
-        if i % 10000 == 0:
-            print('Process: %d/%d' % (i, len(sorted_df)), end='\r')
-        # If new subject, find the start and end index of same subject in sorted admission df
-        if row['subject_id'] != prev_subject:
-            j_start=j_end
-            while j_start<len(sorted_df) and sorted_df['subject_id'][j_start] < row['subject_id']:
-                j_start+=1
-            j_end = j_start
-            while j_end<len(sorted_df) and sorted_df['subject_id'][j_end] == row['subject_id']:
-                j_end+=1
-            prev_subject=row['subject_id']
-        # Count number of previous admissions within the time range
-        for j in range(j_start, j_end):
-            if row['intime']>sorted_df['admittime'][j] and row['intime']-sorted_df['admittime'][j]<=timerange_delta:
-                n_adm[i]+=1
+    N = len(df_master)
+    n_adm = [0 for _ in range(N)]
+
+    def get_num_past_admissions(df):
+        # print(df)
+        subject_id = df.iloc[0]['subject_id']
+        # print(subject_id)
+        if subject_id in grouped_adm.groups.keys():
+            df_adm = grouped_adm.get_group(subject_id)
+            # print('true', df_adm)
+            start = end = df_adm.index[0]
+            for i in df.index:
+                if i % 10000 == 0 or i == N - 1:
+                    print('Process: %d/%d' % (i, N - 1), end='\r')
+                while start < df_adm.index[-1] and df.loc[i, 'intime'] - df_adm.loc[start, 'admittime'] > timerange_delta:
+                    start += 1
+                end = start
+                while end <= df_adm.index[-1] and \
+                        (timerange_delta >= (df.loc[i, 'intime'] - df_adm.loc[end, 'admittime']) > timedelta(days=0)):
+                    end += 1
+                n_adm[i] = end - start
+
+    grouped = df_master.groupby('subject_id')
+    grouped_adm = df_admissions_sorted.groupby('subject_id')
+    grouped.apply(get_num_past_admissions)
 
     df_master.loc[:,''.join(['n_hosp_', str(timerange), "d"])] = n_adm
 
@@ -156,32 +164,32 @@ def generate_past_admissions(df_master, df_admissions, timerange):
 
 
 def generate_past_icu_visits(df_master, df_icustays, timerange):
-    sorted_df = df_icustays[df_icustays['subject_id'].isin(df_master['subject_id'].unique().tolist())][['subject_id', 'intime']].copy()
-    sorted_df.sort_values(['subject_id', 'intime'], inplace=True)
-    sorted_df.reset_index(drop=True, inplace=True)
+    df_icustays_sorted = df_icustays[df_icustays['subject_id'].isin(df_master['subject_id'].unique().tolist())][['subject_id', 'intime']].copy()
+    df_icustays_sorted.sort_values(['subject_id', 'intime'], inplace=True)
+    df_icustays_sorted.reset_index(drop=True, inplace=True)
 
     timerange_delta = timedelta(days=timerange)
-    j_start = 0
-    j_end = 0
-    prev_subject=None
-    n_icu = [0 for _ in range(len(df_master))]
-    # Loop through ED visits
-    for i, row in df_master.iterrows():
-        if i % 10000 == 0:
-            print('Process: %d/%d' % (i, len(sorted_df)), end='\r')
-        # If new subject, find the start and end index of same subject in sorted admission df
-        if row['subject_id'] != prev_subject:
-            j_start=j_end
-            while j_start<len(sorted_df) and sorted_df['subject_id'][j_start] < row['subject_id']:
-                j_start+=1
-            j_end = j_start
-            while j_end<len(sorted_df) and sorted_df['subject_id'][j_end] == row['subject_id']:
-                j_end+=1
-            prev_subject=row['subject_id']
-        # Count number of previous admissions within the time range
-        for j in range(j_start, j_end):
-            if row['intime']>sorted_df['intime'][j] and row['intime']-sorted_df['intime'][j]<=timerange_delta:
-                n_icu[i]+=1
+    N = len(df_master)
+    n_icu = [0 for _ in range(N)]
+    def get_num_past_icu_visits(df):
+        subject_id = df.iloc[0]['subject_id']
+        if subject_id in grouped_icu.groups.keys():
+            df_icu = grouped_icu.get_group(subject_id)
+            start = end = df_icu.index[0]
+            for i in df.index:
+                if i % 10000 == 0 or i == N - 1:
+                    print('Process: %d/%d' % (i, N - 1), end='\r')
+                while start < df_icu.index[-1] and df.loc[i, 'intime'] - df_icu.loc[start, 'intime'] > timerange_delta:
+                    start += 1
+                end = start
+                while end <= df_icu.index[-1] and \
+                        (timerange_delta >= (df.loc[i, 'intime'] - df_icu.loc[end, 'intime']) > timedelta(days=0)):
+                    end += 1
+                n_icu[i] = end - start
+
+    grouped = df_master.groupby('subject_id')
+    grouped_icu = df_icustays_sorted.groupby('subject_id')
+    grouped.apply(get_num_past_icu_visits)
 
     df_master.loc[:,''.join(['n_icu_', str(timerange), "d"])] = n_icu
 
@@ -199,10 +207,11 @@ def generate_future_ed_visits(df_master, next_ed_visit_timerange):
     curr_subject=None
     next_subject=None
 
-    for i, row in df_master.iterrows():
+    def get_future_ed_visits(row):
+        i = row.name
         curr_subject = row['subject_id']
         next_subject= df_master['subject_id'][i+1] if i< (n_stays-1) else None
-        
+
         if curr_subject == next_subject:
             curr_outtime = row['outtime']
             next_intime = df_master['intime'][i+1]
@@ -210,8 +219,9 @@ def generate_future_ed_visits(df_master, next_ed_visit_timerange):
 
             time_of_next_ed_visit[i] = next_intime
             time_to_next_ed_visit[i] = next_intime_diff
-            outcome_ed_revisit[i] = next_intime_diff < timerange_delta 
+            outcome_ed_revisit[i] = next_intime_diff < timerange_delta
 
+    df_master.apply(get_future_ed_visits, axis=1)
     df_master.loc[:,'next_ed_visit_time'] = time_of_next_ed_visit
     df_master.loc[:,'next_ed_visit_time_diff'] = time_to_next_ed_visit
     df_master.loc[:,''.join(['outcome_ed_revisit_', str(next_ed_visit_timerange), "d"])] = outcome_ed_revisit
