@@ -285,3 +285,54 @@ def merge_medrecon_count_on_edstay(df_master, df_medrecon):
     df_medcount = grouped['gsn'].nunique().reset_index().rename({'gsn': 'n_medrecon'}, axis=1)
     df_master = pd.merge(df_master, df_medcount, on='stay_id', how='left')
     return df_master
+
+def outlier_removal_imputation(column_type, vitals_valid_range):
+    column_range = vitals_valid_range[column_type]
+    def outlier_removal_imputation_single_value(x):
+        if x < column_range['outlier_low'] or x > column_range['outlier_high']:
+            # set as missing
+            return np.nan
+        elif x < column_range['valid_low']:
+            # impute with nearest valid value
+            return column_range['valid_low']
+        elif x > column_range['valid_high']:
+            # impute with nearest valid value
+            return column_range['valid_high']
+        else:
+            return x
+    return outlier_removal_imputation_single_value
+
+def convert_temp_to_celcius(df_master):
+    for column in df_master.columns:
+        column_type = column.split('_')[1] if len(column.split('_')) > 1 else None
+        if column_type == 'temperature':
+            # convert to celcius
+            df_master[column] -= 32
+            df_master[column] *= 5/9
+    return df_master
+
+def remove_outliers(df_master, vitals_valid_range):
+    for column in df_master.columns:
+        column_type = column.split('_')[1] if len(column.split('_')) > 1 else None
+        if column_type in vitals_valid_range:
+            df_master[column] = df_master[column].apply(outlier_removal_imputation(column_type, vitals_valid_range))
+    return df_master
+
+def display_outliers_count(df_master, vitals_valid_range):
+    display_df = pd.DataFrame(columns=['variable', '< outlier_low', '[outlier_low, valid_low)',
+                                       '[valid_low, valid_high]', '(valid_high, outlier_high]', '> outlier_high'])
+    for column in df_master.columns:
+        column_type = column.split('_')[1] if len(column.split('_')) > 1 else None
+        if column_type in vitals_valid_range:
+            column_range = vitals_valid_range[column_type]
+            display_df = display_df.append({'variable': column,
+                   '< outlier_low': len(df_master[df_master[column] < column_range['outlier_low']]),
+                   '[outlier_low, valid_low)': len(df_master[(column_range['outlier_low'] <= df_master[column])
+                                                             & (df_master[column] < column_range['valid_low'])]),
+                   '[valid_low, valid_high]': len(df_master[(column_range['valid_low'] <= df_master[column])
+                                                            & (df_master[column] <= column_range['valid_high'])]),
+                   '(valid_high, outlier_high]': len(df_master[(column_range['valid_high'] < df_master[column])
+                                                               & (df_master[column] <= column_range['outlier_high'])]),
+                   '> outlier_high': len(df_master[df_master[column] > column_range['outlier_high']])
+            }, ignore_index=True)
+    return display_df
