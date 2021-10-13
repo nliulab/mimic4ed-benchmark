@@ -45,6 +45,23 @@ def read_vitalsign_table(vitalsign_table_path):
     vital_rename_dict = {vital: '_'.join(['ed', vital]) for vital in
                          ['temperature', 'heartrate', 'resprate', 'o2sat', 'sbp', 'dbp', 'rhythm', 'pain']}
     df_vitalsign.rename(vital_rename_dict, axis=1, inplace=True)
+
+    def convert_str_to_float(x):
+        if isinstance(x, str):
+            x_split = re.compile('[^a-zA-Z0-9-]').split(x.strip())
+            if '-' in x_split[0]:
+                x_split_dash = x_split[0].split('-')
+                if len(x_split_dash) == 2 and x_split_dash[0].isnumeric() and x_split_dash[1].isnumeric():
+                    return (float(x_split_dash[0]) + float(x_split_dash[1])) / 2
+                else:
+                    return np.nan
+            else:
+                if x_split[0].isnumeric():
+                    return float(x_split[0])
+                else:
+                    return np.nan
+
+    df_vitalsign['ed_pain'] = df_vitalsign['ed_pain'].apply(convert_str_to_float).astype(float)
     return df_vitalsign
 
 def read_pyxis_table(pyxis_table_path):
@@ -136,12 +153,9 @@ def generate_past_admissions(df_master, df_admissions, timerange):
     n_adm = [0 for _ in range(N)]
 
     def get_num_past_admissions(df):
-        # print(df)
         subject_id = df.iloc[0]['subject_id']
-        # print(subject_id)
         if subject_id in grouped_adm.groups.keys():
             df_adm = grouped_adm.get_group(subject_id)
-            # print('true', df_adm)
             start = end = df_adm.index[0]
             for i in df.index:
                 if i % 10000 == 0 or i == N - 1:
@@ -276,6 +290,7 @@ def merge_med_count_on_edstay(df_master, df_pyxis):
     grouped = df_pyxis_fillna.groupby(['stay_id'])
     df_medcount = grouped['gsn'].nunique().reset_index().rename({'gsn': 'n_med'}, axis=1)
     df_master = pd.merge(df_master, df_medcount, on='stay_id', how='left')
+    df_master.fillna({'n_med': 0}, inplace=True)
     return df_master
 
 def merge_medrecon_count_on_edstay(df_master, df_medrecon):
@@ -284,6 +299,7 @@ def merge_medrecon_count_on_edstay(df_master, df_medrecon):
     grouped = df_medrecon_fillna.groupby(['stay_id'])
     df_medcount = grouped['gsn'].nunique().reset_index().rename({'gsn': 'n_medrecon'}, axis=1)
     df_master = pd.merge(df_master, df_medcount, on='stay_id', how='left')
+    df_master.fillna({'n_medrecon': 0}, inplace=True)
     return df_master
 
 def outlier_removal_imputation(column_type, vitals_valid_range):
