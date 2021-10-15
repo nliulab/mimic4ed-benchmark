@@ -118,6 +118,60 @@ def add_outcome_icu_transfer(df_master, df_icustays, timerange):
     # df_master_icu.drop(['intime_icu', 'time_to_icu_transfer'],axis=1, inplace=True)
     return df_master_icu
 
+def fill_na_ethnicity(df_master): # requires df_master to be sorted 
+    N = len(df_master)
+    ethnicity_list= [float("NaN") for _ in range(N)]
+    ethnicity_dict = {} # dict to store subejct ethnicity
+
+    def get_filled_ethnicity(row):
+        i = row.name
+        if i % 10000 == 0:
+            print('Process: %d/%d' % (i, N), end='\r')
+        curr_eth = row['ethnicity']
+        curr_subject = row['subject_id']
+        prev_subject = df_master['subject_id'][i+1] if i< (N-1) else None
+
+        if curr_subject not in ethnicity_dict.keys(): ## if subject ethnicity not stored yet, look ahead and behind 
+            subject_ethnicity_list = []
+            next_subject_idx = i+1
+            prev_subject_idx = i-1
+            next_subject= df_master['subject_id'][next_subject_idx] if next_subject_idx <= (N-1) else None
+            prev_subject= df_master['subject_id'][prev_subject_idx] if prev_subject_idx >= 0 else None
+
+            while prev_subject == curr_subject:
+                subject_ethnicity_list.append(df_master['ethnicity'][prev_subject_idx])
+                prev_subject_idx -= 1
+                prev_subject= df_master['subject_id'][prev_subject_idx] if prev_subject_idx >= 0 else None
+
+            while next_subject == curr_subject:
+                subject_ethnicity_list.append(df_master['ethnicity'][next_subject_idx])
+                next_subject_idx += 1
+                next_subject= df_master['subject_id'][next_subject_idx] if next_subject_idx <= (N-1) else None
+        
+            eth_set = set(subject_ethnicity_list)
+            
+            if len(eth_set) == 0: ## no previous or next entries 
+                subject_eth = curr_eth
+            elif len(eth_set) == 1: ## exactly one other non-NA ethnicity
+                subject_eth = eth_set.pop()
+            else:
+                eth_set = {x for x in eth_set if pd.notna(x)} # remove any NA
+                if "OTHER" in eth_set and len(eth_set) > 1: # Contains OTHER + another ethnicity
+                    eth_set.remove("OTHER") # remove OTHER
+                subject_eth = eth_set.pop()
+            
+            ethnicity_dict[curr_subject] = subject_eth ## store in dict
+    
+        if pd.isna(curr_eth): ## if curr_eth is na, fill with subject_eth from dict
+            ethnicity_list[i]= ethnicity_dict[curr_subject]
+        else:
+            ethnicity_list[i]= curr_eth
+            
+    df_master.apply(get_filled_ethnicity, axis=1)
+    print('Process: %d/%d' % (N, N), end='\r')
+    df_master.loc[:,'ethnicity'] = ethnicity_list
+    return df_master
+
 
 def generate_past_ed_visits(df_master, timerange):
     #df_master = df_master.sort_values(['subject_id', 'intime']).reset_index()
@@ -250,6 +304,38 @@ def generate_future_ed_visits(df_master, next_ed_visit_timerange):
     df_master.loc[:,''.join(['outcome_ed_revisit_', str(next_ed_visit_timerange), "d"])] = outcome_ed_revisit
 
     return df_master
+
+
+def generate_numeric_timedelta(df_master):
+    N = len(df_master)
+    ed_los_hours = [float("NaN") for _ in range(N)]
+    time_to_icu_transfer_hours = [float("NaN") for _ in range(N)]
+    next_ed_visit_time_diff_days = [float("NaN") for _ in range(N)]
+    
+    def get_numeric_timedelta(row):
+        i = row.name
+        if i % 10000 == 0:
+            print('Process: %d/%d' % (i, N), end='\r')
+        curr_subject = row['subject_id']
+        curr_ed_los = row['ed_los']
+        curr_time_to_icu_transfer = row['time_to_icu_transfer']
+        curr_next_ed_visit_time_diff = row['next_ed_visit_time_diff']
+        
+
+        ed_los_hours[i] = round(curr_ed_los.total_seconds() / (60*60),2) if not pd.isna(curr_ed_los) else curr_ed_los
+        time_to_icu_transfer_hours[i] = round(curr_time_to_icu_transfer.total_seconds() / (60*60),2) if not pd.isna(curr_time_to_icu_transfer) else curr_time_to_icu_transfer
+        next_ed_visit_time_diff_days[i] = round(curr_next_ed_visit_time_diff.total_seconds() / (24*60*60), 2) if not pd.isna(curr_next_ed_visit_time_diff) else curr_next_ed_visit_time_diff
+    
+
+    df_master.apply(get_numeric_timedelta, axis=1)
+    print('Process: %d/%d' % (N, N), end='\r')
+    
+    df_master.loc[:,'ed_los_hours'] = ed_los_hours
+    df_master.loc[:,'time_to_icu_transfer_hours'] = time_to_icu_transfer_hours
+    df_master.loc[:,'next_ed_visit_time_diff_days'] = next_ed_visit_time_diff_days
+
+    return df_master
+
 
 def encode_chief_complaints(df_master, complaint_dict):
 
