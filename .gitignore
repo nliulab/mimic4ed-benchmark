@@ -33,3 +33,4 @@ Benchmark_scripts/medcodes/drugs/_mappers/__pycache__/_lv4.cpython-38.pyc
 Benchmark_scripts/medcodes/drugs/_mappers/__pycache__/_lv5.cpython-38.pyc
 Benchmark_scripts/__pycache__/medcode_utils.cpython-38.pyc
 Benchmark_scripts/__pycache__/helpers.cpython-38.pyc
+Benchmark_scripts/__pycache__/*.pyc
