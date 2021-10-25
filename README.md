@@ -17,7 +17,7 @@ Python workflow for generating benchmark datasets and machine learning models fr
 
 ## General info
 
-Clinical decisions in the emergency department are  . Unsurprisingly, machine learning based clinical prediction models have been widely adopted in the field of 
+Clinical decisions in the emergency department play an important role in optimizing urgent patient care and scarce resources. And unsurprisingly, machine learning based clinical prediction models have been widely adopted in the field of emergency medicine.
 
 In parellel to the rise of clinical prediction models, there has also been a rapid increase in adoption of Electronic Health records (EHR) for patient data. The Medical Information Mart for Intensive Care ([MIMIC)-IV]((https://physionet.org/content/mimiciv/1.0/)) and [MIMIC-IV-ED](https://physionet.org/content/mimic-iv-ed/1.0/) are examples of EHR databases that contain a vast amount of patient information.
 
