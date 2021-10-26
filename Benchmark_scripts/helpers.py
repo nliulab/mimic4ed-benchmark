@@ -784,30 +784,35 @@ def add_score_SERP30d(df):
     print("Varibale 'Score_SERP30d' succeffully added")
     
     
-def PlotROCCurve(probs,y_test_roc):
+def PlotROCCurve(probs,y_test_roc, ci= 0.95):
     
     fpr, tpr, threshold = metrics.roc_curve(y_test_roc,probs)
     roc_auc = metrics.auc(fpr, tpr)
-    plt.title('Receiver Operating Characteristic')
-    plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
+    average_precision = average_precision_score(y_test_roc, probs)
+    a=np.sqrt(np.square(fpr-0)+np.square(tpr-1)).argmin()
+    sensitivity = tpr[a]
+    specificity = 1-fpr[a]
+    threshold = threshold[a]
+    print("AUC:",roc_auc)
+    print("AP(AUPRC):", average_precision)
+    print("Sensitivity:",sensitivity)
+    print("Specificity:",specificity)
+    print("Score thresold:",threshold)
+    lower_auc, _, upper_auc = auc_with_ci(probs,y_test_roc, lower = ci/2, upper = 1-ci/2, n_bootstraps=1000)
+
+
+    plt.title('Receiver Operating Characteristic: AUC={0:0.4f}'.format(
+          roc_auc))
+    plt.plot(fpr, tpr, 'b')
     plt.legend(loc = 'lower right')
     plt.plot([0, 1], [0, 1],'r--')
     plt.xlim([0, 1])
     plt.ylim([0, 1])
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
-    a=np.sqrt(np.square(fpr-0)+np.square(tpr-1)).argmin()
-    print("AUC:",roc_auc)
-    print("Sensiticity:",tpr[a])
-    print("Specificity:",1-fpr[a])
-    print("Score thresold:",threshold[a])
     plt.show()
-    
-    
-    
+
     precision, recall, threshold2 = precision_recall_curve(y_test_roc, probs)
-    average_precision = average_precision_score(y_test_roc, probs)
-    print("AP:",average_precision)
     plt.step(recall, precision, color='b', alpha=0.2,
          where='post')
     plt.fill_between(recall, precision, step='post', alpha=0.2,
@@ -816,5 +821,41 @@ def PlotROCCurve(probs,y_test_roc):
     plt.ylabel('Precision')
     plt.ylim([0.0, 1.05])
     plt.xlim([0.0, 1.0])
-    plt.title('2-class Precision-Recall Curve: AP={0:0.2f}'.format(
+    plt.title('2-class Precision-Recall Curve: AP={0:0.4f}'.format(
           average_precision))
+    plt.show()
+    return [sensitivity, specificity, threshold, average_precision, lower_auc, roc_auc, upper_auc]
+
+def auc_with_ci(probs,y_test_roc, lower = 0.025, upper = 0.975, n_bootstraps=1000, rng_seed=10):
+    y_test_roc = np.asarray(y_test_roc)
+    auc = metrics.roc_auc_score(y_test_roc, probs)
+    bootstrapped_scores = []
+    rng = np.random.default_rng(rng_seed)
+    for i in range(n_bootstraps):
+        # bootstrap by sampling with replacement on the prediction indices
+        indices = rng.integers(0, len(y_test_roc)-1, len(y_test_roc))
+        if len(np.unique(y_test_roc[indices])) < 2:
+            # We need at least one positive and one negative sample for ROC AUC
+            # to be defined: reject the sample
+            continue
+
+        score = metrics.roc_auc_score(y_test_roc[indices], probs[indices])
+        bootstrapped_scores.append(score)
+    sorted_scores = np.array(bootstrapped_scores)
+    sorted_scores.sort()
+
+    # Computing the lower and upper bound of the 90% confidence interval
+    # You can change the bounds percentiles to 0.025 and 0.975 to get
+    # a 95% confidence interval instead.
+    confidence_lower = sorted_scores[int(lower * len(sorted_scores))]
+    confidence_upper = sorted_scores[int(upper * len(sorted_scores))]
+    print("Confidence interval for the score: [{:0.3f} - {:0.3}]".format(
+        confidence_lower, confidence_upper))
+    return confidence_lower, auc, confidence_upper
+
+def plot_confidence_interval(dataset):
+    for lower,upper,auc,y in zip(dataset['lower_auc'],dataset['upper_auc'],dataset['roc_auc'], range(len(dataset))):
+        plt.plot((lower, upper),(y,y),'-', color='gray')
+        plt.plot((auc),(y),'ok', markersize=4)
+    plt.yticks(range(len(dataset)),list(dataset['Model']))
+    plt.show()
