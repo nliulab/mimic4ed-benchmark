@@ -798,7 +798,7 @@ def PlotROCCurve(probs,y_test_roc, ci= 0.95):
     print("Sensitivity:",sensitivity)
     print("Specificity:",specificity)
     print("Score thresold:",threshold)
-    lower_auc, _, upper_auc = auc_with_ci(probs,y_test_roc, lower = ci/2, upper = 1-ci/2, n_bootstraps=1000)
+    lower_auroc, upper_auroc, lower_ap, upper_ap, lower_sensitivity, upper_sensitivity, lower_specificity, upper_specificity = auc_with_ci(probs,y_test_roc, lower = ci/2, upper = 1-ci/2, n_bootstraps=1000)
 
 
     plt.title('Receiver Operating Characteristic: AUC={0:0.4f}'.format(
@@ -824,13 +824,16 @@ def PlotROCCurve(probs,y_test_roc, ci= 0.95):
     plt.title('2-class Precision-Recall Curve: AP={0:0.4f}'.format(
           average_precision))
     plt.show()
-    return [sensitivity, specificity, threshold, average_precision, lower_auc, roc_auc, upper_auc]
+    return [roc_auc, average_precision, sensitivity, specificity, threshold, average_precision, lower_auroc, upper_auroc, lower_ap, upper_ap, lower_sensitivity, upper_sensitivity, lower_specificity, upper_specificity]
 
-def auc_with_ci(probs,y_test_roc, lower = 0.025, upper = 0.975, n_bootstraps=1000, rng_seed=10):
+def auc_with_ci(probs,y_test_roc, lower = 0.025, upper = 0.975, n_bootstraps=200, rng_seed=10):
     y_test_roc = np.asarray(y_test_roc)
-    auc = metrics.roc_auc_score(y_test_roc, probs)
-    bootstrapped_scores = []
-    rng = np.random.default_rng(rng_seed)
+    bootstrapped_auroc = []
+    bootstrapped_ap = []
+    bootstrapped_sensitivity = []
+    bootstrapped_specificity = []
+
+    rng = np.random.default_rng()
     for i in range(n_bootstraps):
         # bootstrap by sampling with replacement on the prediction indices
         indices = rng.integers(0, len(y_test_roc)-1, len(y_test_roc))
@@ -838,23 +841,40 @@ def auc_with_ci(probs,y_test_roc, lower = 0.025, upper = 0.975, n_bootstraps=100
             # We need at least one positive and one negative sample for ROC AUC
             # to be defined: reject the sample
             continue
-
-        score = metrics.roc_auc_score(y_test_roc[indices], probs[indices])
-        bootstrapped_scores.append(score)
-    sorted_scores = np.array(bootstrapped_scores)
+        fpr, tpr, threshold = metrics.roc_curve(y_test_roc[indices],probs[indices])
+        auroc = metrics.auc(fpr, tpr)
+        ap = metrics.average_precision_score(y_test_roc[indices], probs[indices])
+        a=np.sqrt(np.square(fpr-0)+np.square(tpr-1)).argmin()
+        sensitivity = tpr[a]
+        specificity = 1-fpr[a]
+        bootstrapped_auroc.append(auroc)
+        bootstrapped_ap.append(ap)
+        bootstrapped_sensitivity.append(sensitivity)
+        bootstrapped_specificity.append(specificity)
+    sorted_scores = np.array(bootstrapped_auroc)
     sorted_scores.sort()
+    lower_auroc = sorted_scores[int(lower * len(sorted_scores))]
+    upper_auroc = sorted_scores[int(upper * len(sorted_scores))]
 
-    # Computing the lower and upper bound of the 90% confidence interval
-    # You can change the bounds percentiles to 0.025 and 0.975 to get
-    # a 95% confidence interval instead.
-    confidence_lower = sorted_scores[int(lower * len(sorted_scores))]
-    confidence_upper = sorted_scores[int(upper * len(sorted_scores))]
-    print("Confidence interval for the score: [{:0.3f} - {:0.3}]".format(
-        confidence_lower, confidence_upper))
-    return confidence_lower, auc, confidence_upper
+    sorted_scores = np.array(bootstrapped_ap)
+    sorted_scores.sort()
+    lower_ap = sorted_scores[int(lower * len(sorted_scores))]
+    upper_ap = sorted_scores[int(upper * len(sorted_scores))]
+        
+    sorted_scores = np.array(bootstrapped_sensitivity)
+    sorted_scores.sort()
+    lower_sensitivity = sorted_scores[int(lower * len(sorted_scores))]
+    upper_sensitivity = sorted_scores[int(upper * len(sorted_scores))]
+
+    sorted_scores = np.array(bootstrapped_specificity)
+    sorted_scores.sort()
+    lower_specificity = sorted_scores[int(lower * len(sorted_scores))]
+    upper_specificity = sorted_scores[int(upper * len(sorted_scores))]
+
+    return lower_auroc, upper_auroc, lower_ap, upper_ap, lower_sensitivity, upper_sensitivity, lower_specificity, upper_specificity
 
 def plot_confidence_interval(dataset):
-    for lower,upper,auc,y in zip(dataset['lower_auc'],dataset['upper_auc'],dataset['roc_auc'], range(len(dataset))):
+    for lower,upper,auc,y in zip(dataset['lower_auroc'],dataset['upper_auroc'],dataset['roc_auc'], range(len(dataset))):
         plt.plot((lower, upper),(y,y),'-', color='gray')
         plt.plot((auc),(y),'ok', markersize=4)
     plt.yticks(range(len(dataset)),list(dataset['Model']))
