@@ -833,7 +833,7 @@ def auc_with_ci(probs,y_test_roc, lower = 0.025, upper = 0.975, n_bootstraps=200
     bootstrapped_sensitivity = []
     bootstrapped_specificity = []
 
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(rng_seed)
     for i in range(n_bootstraps):
         # bootstrap by sampling with replacement on the prediction indices
         indices = rng.integers(0, len(y_test_roc)-1, len(y_test_roc))
