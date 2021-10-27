@@ -794,7 +794,7 @@ def PlotROCCurve(probs,y_test_roc, ci= 0.95):
     specificity = 1-fpr[a]
     threshold = threshold[a]
     print("AUC:",roc_auc)
-    print("AP(AUPRC):", average_precision)
+    print("AUPRC:", average_precision)
     print("Sensitivity:",sensitivity)
     print("Specificity:",specificity)
     print("Score thresold:",threshold)
@@ -821,7 +821,7 @@ def PlotROCCurve(probs,y_test_roc, ci= 0.95):
     plt.ylabel('Precision')
     plt.ylim([0.0, 1.05])
     plt.xlim([0.0, 1.0])
-    plt.title('2-class Precision-Recall Curve: AP={0:0.4f}'.format(
+    plt.title('Precision-Recall Curve: AUPRC={0:0.4f}'.format(
           average_precision))
     plt.show()
     return [roc_auc, average_precision, sensitivity, specificity, threshold, average_precision, lower_auroc, upper_auroc, lower_ap, upper_ap, lower_sensitivity, upper_sensitivity, lower_specificity, upper_specificity]
