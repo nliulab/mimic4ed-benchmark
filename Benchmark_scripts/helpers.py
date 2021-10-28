@@ -784,7 +784,7 @@ def add_score_SERP30d(df):
     print("Varibale 'Score_SERP30d' succeffully added")
     
     
-def PlotROCCurve(probs,y_test_roc, ci= 0.95):
+def PlotROCCurve(probs,y_test_roc, ci= 95):
     
     fpr, tpr, threshold = metrics.roc_curve(y_test_roc,probs)
     roc_auc = metrics.auc(fpr, tpr)
@@ -798,13 +798,12 @@ def PlotROCCurve(probs,y_test_roc, ci= 0.95):
     print("Sensitivity:",sensitivity)
     print("Specificity:",specificity)
     print("Score thresold:",threshold)
-    lower_auroc, upper_auroc, lower_ap, upper_ap, lower_sensitivity, upper_sensitivity, lower_specificity, upper_specificity = auc_with_ci(probs,y_test_roc, lower = ci/2, upper = 1-ci/2, n_bootstraps=1000)
+    lower_auroc, upper_auroc, std_auroc, lower_ap, upper_ap, std_ap, lower_sensitivity, upper_sensitivity, std_sensitivity, lower_specificity, upper_specificity, std_specificity = auc_with_ci(probs,y_test_roc, lower = (100-ci)/2, upper = 100-(100-ci)/2, n_bootstraps=200)
 
 
     plt.title('Receiver Operating Characteristic: AUC={0:0.4f}'.format(
           roc_auc))
     plt.plot(fpr, tpr, 'b')
-    plt.legend(loc = 'lower right')
     plt.plot([0, 1], [0, 1],'r--')
     plt.xlim([0, 1])
     plt.ylim([0, 1])
@@ -824,9 +823,10 @@ def PlotROCCurve(probs,y_test_roc, ci= 0.95):
     plt.title('2-class Precision-Recall Curve: AP={0:0.4f}'.format(
           average_precision))
     plt.show()
-    return [roc_auc, average_precision, sensitivity, specificity, threshold, average_precision, lower_auroc, upper_auroc, lower_ap, upper_ap, lower_sensitivity, upper_sensitivity, lower_specificity, upper_specificity]
+    return [roc_auc, average_precision, sensitivity, specificity, threshold, lower_auroc, upper_auroc, std_auroc, lower_ap, upper_ap, std_ap, lower_sensitivity, upper_sensitivity, std_sensitivity, lower_specificity, upper_specificity, std_specificity]
 
-def auc_with_ci(probs,y_test_roc, lower = 0.025, upper = 0.975, n_bootstraps=200, rng_seed=10):
+def auc_with_ci(probs,y_test_roc, lower = 2.5, upper = 97.5, n_bootstraps=200, rng_seed=10):
+    print(lower, upper)
     y_test_roc = np.asarray(y_test_roc)
     bootstrapped_auroc = []
     bootstrapped_ap = []
@@ -851,31 +851,28 @@ def auc_with_ci(probs,y_test_roc, lower = 0.025, upper = 0.975, n_bootstraps=200
         bootstrapped_ap.append(ap)
         bootstrapped_sensitivity.append(sensitivity)
         bootstrapped_specificity.append(specificity)
-    sorted_scores = np.array(bootstrapped_auroc)
-    sorted_scores.sort()
-    lower_auroc = sorted_scores[int(lower * len(sorted_scores))]
-    upper_auroc = sorted_scores[int(upper * len(sorted_scores))]
 
-    sorted_scores = np.array(bootstrapped_ap)
-    sorted_scores.sort()
-    lower_ap = sorted_scores[int(lower * len(sorted_scores))]
-    upper_ap = sorted_scores[int(upper * len(sorted_scores))]
-        
-    sorted_scores = np.array(bootstrapped_sensitivity)
-    sorted_scores.sort()
-    lower_sensitivity = sorted_scores[int(lower * len(sorted_scores))]
-    upper_sensitivity = sorted_scores[int(upper * len(sorted_scores))]
+    lower_auroc,upper_auroc = np.percentile(bootstrapped_auroc, [lower, upper])
+    lower_ap,upper_ap = np.percentile(bootstrapped_ap, [lower, upper])
+    lower_sensitivity,upper_sensitivity = np.percentile(bootstrapped_sensitivity, [lower, upper])
+    lower_specificity,upper_specificity = np.percentile(bootstrapped_specificity, [lower, upper])
 
-    sorted_scores = np.array(bootstrapped_specificity)
-    sorted_scores.sort()
-    lower_specificity = sorted_scores[int(lower * len(sorted_scores))]
-    upper_specificity = sorted_scores[int(upper * len(sorted_scores))]
+    std_auroc = np.std(bootstrapped_auroc)
+    std_ap = np.std(bootstrapped_ap)
+    std_sensitivity = np.std(bootstrapped_sensitivity)
+    std_specificity = np.std(bootstrapped_specificity)
 
-    return lower_auroc, upper_auroc, lower_ap, upper_ap, lower_sensitivity, upper_sensitivity, lower_specificity, upper_specificity
+    return lower_auroc, upper_auroc, std_auroc, lower_ap, upper_ap, std_ap, lower_sensitivity, upper_sensitivity, std_sensitivity, lower_specificity, upper_specificity, std_specificity
 
-def plot_confidence_interval(dataset):
-    for lower,upper,auc,y in zip(dataset['lower_auroc'],dataset['upper_auroc'],dataset['roc_auc'], range(len(dataset))):
-        plt.plot((lower, upper),(y,y),'-', color='gray')
-        plt.plot((auc),(y),'ok', markersize=4)
+
+def plot_confidence_interval(dataset, metric= 'auroc', ci=95):
+    ci_list = [dataset['lower_'+metric].values.tolist(),dataset['upper_'+metric].values.tolist()]
+    std = [(dataset[metric]-dataset['std_'+metric]).values.tolist(), (dataset[metric]+dataset['std_'+metric]).values.tolist()]
+    auc = dataset[metric].values.tolist()
+    y = [range(len(dataset)), range(len(dataset))]
+
+    plt.plot(ci_list,y, '-', color='gray',linewidth=1.5)
+    plt.plot(std,y,'-', color='black', linewidth=2)
+    plt.plot(auc,y[0],'|k', markersize=4)
     plt.yticks(range(len(dataset)),list(dataset['Model']))
     plt.show()
