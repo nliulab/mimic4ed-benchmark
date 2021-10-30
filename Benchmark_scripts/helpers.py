@@ -865,7 +865,7 @@ def auc_with_ci(probs,y_test_roc, lower = 2.5, upper = 97.5, n_bootstraps=200, r
     return lower_auroc, upper_auroc, std_auroc, lower_ap, upper_ap, std_ap, lower_sensitivity, upper_sensitivity, std_sensitivity, lower_specificity, upper_specificity, std_specificity
 
 
-def plot_confidence_interval(dataset, metric= 'auroc', ci=95):
+def plot_confidence_interval(dataset, metric= 'auroc', ci=95, name = 'AUROC'):
     ci_list = [dataset['lower_'+metric].values.tolist(),dataset['upper_'+metric].values.tolist()]
     std = [(dataset[metric]-dataset['std_'+metric]).values.tolist(), (dataset[metric]+dataset['std_'+metric]).values.tolist()]
     auc = dataset[metric].values.tolist()
@@ -874,5 +874,6 @@ def plot_confidence_interval(dataset, metric= 'auroc', ci=95):
     plt.plot(ci_list,y, '-', color='gray',linewidth=1.5)
     plt.plot(std,y,'-', color='black', linewidth=2)
     plt.plot(auc,y[0],'|k', markersize=4)
+    plt.xlabel(name)
     plt.yticks(range(len(dataset)),list(dataset['Model']))
     plt.show()
