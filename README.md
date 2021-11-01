@@ -23,7 +23,7 @@ In parellel to the rise of clinical prediction models, there has also been a rap
 
 There is therefore a need for publicly available benchmark datasets and models that allow researchers to produce comparable and reproducible results. 
 
-In 2019, a [MIMIC-III benchmark](https://github.com/YerevaNN/mimic3-benchmarks) was published for the previous iteration of the MIMIC database. 
+For the previous iteration of the MIMIC database (MIMIC-III), several benchmark pipelines have published in [2019](https://github.com/YerevaNN/mimic3-benchmarks) and [2020](https://github.com/MLforHealth/MIMIC_Extract).
 
 Here, we present a workflow that generates a benchmark dataset from the MIMIC-IV-ED database and constructs benchmark models for three ED-based prediction tasks.
 
@@ -49,19 +49,51 @@ Prior to these steps, this repository, MIMIC-IV-ED and MIMIC-IV should be downlo
 
 ### 1. Benchmark Data Generation
 ~~~
-python extract_master_dataset.py {mimic_iv_path} {output_path} {icu_transfer_timerange} {next_ed_visit_timerange}
+python extract_master_dataset.py --mimic4_path {mimic4_path} --output_path {output_path} --icu_transfer_timerange {icu_transfer_timerange} --next_ed_visit_timerange {next_ed_visit_timerange}
 ~~~
+
 **Arguements**:
 
-- `mimic_iv_path` : Path to directory containing MIMIC-IV data. Refer to [Requirements and Setup](#requirements-and-setup) for details.
+- `mimic4_path` : Path to directory containing MIMIC-IV data. Refer to [Requirements and Setup](#requirements-and-setup) for details.
 - `output_path ` : Path to output directory.
 - `icu_transfer_timerange` : Timerange in hours for ICU transfer outcome. Default set to 12. 
 - `next_ed_visit_timerange` : Timerange in days days for next ED visit outcome. Default set to 3.
 
+**Output**:
 
-### 2. Cohort Filtering
-### 3. Outcome and Model Selection
-### 4. Model Evaluation
+`master_dataset.csv` output to `output_path`
+
+**Details**:
+
+The input `edstays.csv` from the MIMIC-IV-ED database is taken to be the root table, with `subject_id` as the unique identifier for each patient and `stay_id` as the unique identifier for each ED visit. This root table is then merged with other tables from the main MIMIC-IV database to capture an informative array of clinical variables for each patient.
+
+A total of **81** variables are included in `master_dataset.csv` (Refer to Table 3 for full variable list).
+
+
+### 2. Cohort Filtering, Data Processing
+~~~
+python data_general_processing.py --master_dataset_path {master_dataset_path} --output_path {output_path}
+~~~
+
+**Arguements**:
+
+- `master_dataset_path` : Path to directory containing "master_dataset.csv".
+- `output_path ` : Path to output directory.
+
+**Output**:
+
+`train.csv` and `test.csv` output to `output_path`
+
+**Details**:
+
+`master_dataset.csv` is first filtered to remnove pediatric subjects (Age < 18).
+
+Outlier values in vital sign and lab test variables are then detected using an identical method to [Wang et al.](https://github.com/MLforHealth/MIMIC_Extract), with outlier thresholds defined previously by [Harutyunyan et al.](https://github.com/YerevaNN/mimic3-benchmarks) Outliers are then imputed with the neareset valid value.
+
+The data is then split into `train.csv` and `test.csv` and clinical scores for each patient are then added as additonal variables.
+
+
+### 3. Outcome Selection and Model evaluation
 
 ## Acknowledgements
 
