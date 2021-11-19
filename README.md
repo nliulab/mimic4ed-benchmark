@@ -9,9 +9,8 @@ Python workflow for generating benchmark datasets and machine learning models fr
 * [Requirements and Setup](#requirements-and-setup)
 * [Workflow](#workflow)
     1. [Benchmark Data Generation](#1-benchmark-data-generation)
-    2. [Cohort Filtering](#2-cohort-filtering)
-    3. [Outcome and Model Selection](#3-outcome-and-model-selection)
-    4. [Model Evaluation](#4-model-evaluation)
+    2. [Cohort Filtering](#2-cohort-filtering-and-data-processing)
+    3. [Prediction Task and Model Selection](#3-prediction-task-selection-and-model-evaluation)
 * [Acknowledgements](#acknowledgements)
 * [Citation](#citation)
 
@@ -70,7 +69,7 @@ The input `edstays.csv` from the MIMIC-IV-ED database is taken to be the root ta
 A total of **81** variables are included in `master_dataset.csv` (Refer to Table 3 for full variable list).
 
 
-### 2. Cohort Filtering, Data Processing
+### 2. Cohort Filtering and Data Processing
 ~~~
 python data_general_processing.py --master_dataset_path {master_dataset_path} --output_path {output_path}
 ~~~
