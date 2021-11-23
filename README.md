@@ -115,4 +115,6 @@ For each ED prediction task, various models are implemented and compared. These 
 
 ## Citation
 
+Xie, F., Zhou, J., Lee, J.W., Tan, M., Li, S., Rajnthern, L.S., Chee, M.L., Chakraborty, B., Wong, A.I., Dagan, A., Ong, M.E., Gao, F., & Liu, N. (2021). Benchmarking Predictive Risk Models for Emergency Departments with Large Public Electronic Health Records. <https://arxiv.org/abs/2111.11017>
+
 
