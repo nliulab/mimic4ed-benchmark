@@ -1,7 +1,7 @@
 MIMIC-IV-ED Benchmark
 =========================
 
-Python workflow for generating benchmark datasets and machine learning models from the MIMIC-IV-ED database.
+Python workflow for generating benchmark datasets and machine learning models from the MIMIC-IV-ED database. See our preprint <https://arxiv.org/abs/2111.11017> for the whole story.
 
 ## Table of contents
 * [General info](#general-info)
