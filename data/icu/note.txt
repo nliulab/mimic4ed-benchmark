@@ -1,0 +1,3 @@
+MIMIC-IV-ED and MIMIC-IV databases are not provided with this repository and are required for this workflow. MIMIC-IV-ED can be downloaded from https://physionet.org/content/mimic-iv-ed/1.0/ and MIMIC-IV can be downloaded from https://physionet.org/content/mimiciv/1.0/.
+
+*NOTE It should be noted that upon downloading and extracting the MIMIC databases from their compressed files, the directory /mimic-iv-ed-1.0/ed should be moved/copied to the directory containing MIMIC-IV data /mimic-iv-1.0.

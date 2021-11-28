@@ -1,7 +1,7 @@
 MIMIC-IV-ED Benchmark
 =========================
 
-Python workflow for generating benchmark datasets and machine learning models from the MIMIC-IV-ED database.
+Python workflow for generating benchmark datasets and machine learning models from the MIMIC-IV-ED database. See our preprint <https://arxiv.org/abs/2111.11017> for the whole story.
 
 ## Table of contents
 * [General info](#general-info)
@@ -9,9 +9,8 @@ Python workflow for generating benchmark datasets and machine learning models fr
 * [Requirements and Setup](#requirements-and-setup)
 * [Workflow](#workflow)
     1. [Benchmark Data Generation](#1-benchmark-data-generation)
-    2. [Cohort Filtering](#2-cohort-filtering)
-    3. [Outcome and Model Selection](#3-outcome-and-model-selection)
-    4. [Model Evaluation](#4-model-evaluation)
+    2. [Cohort Filtering](#2-cohort-filtering-and-data-processing)
+    3. [Prediction Task and Model Selection](#3-prediction-task-selection-and-model-evaluation)
 * [Acknowledgements](#acknowledgements)
 * [Citation](#citation)
 
@@ -70,7 +69,7 @@ The input `edstays.csv` from the MIMIC-IV-ED database is taken to be the root ta
 A total of **81** variables are included in `master_dataset.csv` (Refer to Table 3 for full variable list).
 
 
-### 2. Cohort Filtering, Data Processing
+### 2. Cohort Filtering and Data Processing
 ~~~
 python data_general_processing.py --master_dataset_path {master_dataset_path} --output_path {output_path}
 ~~~
@@ -78,7 +77,7 @@ python data_general_processing.py --master_dataset_path {master_dataset_path} --
 **Arguements**:
 
 - `master_dataset_path` : Path to directory containing "master_dataset.csv".
-- `output_path ` : Path to output directory.
+- `output_path` : Path to output directory.
 
 **Output**:
 
@@ -93,10 +92,29 @@ Outlier values in vital sign and lab test variables are then detected using an i
 The data is then split into `train.csv` and `test.csv` and clinical scores for each patient are then added as additonal variables.
 
 
-### 3. Outcome Selection and Model evaluation
+### 3. Prediction Task Selection and Model evaluation
+
+Prediction modelling is currently handled by python notebooks (.ipynb files) that correspond to each of the 3 prediction tasks.
+
+**Arguements**:
+
+- `path` : Path to directory containing `train.csv` and `test.csv`
+
+**Output**:
+
+`result_*.csv` and `importances_*.csv` output to `path`.
+
+`*` denotes the task specific wildcard string, i.e for the hospitalization prediciton task, output files are `result_hospitalization_triage.csv` and `importances_hospitalization_triage.csv`.
+
+**Details**:
+
+For each ED prediction task, various models are implemented and compared. These include: Logistic Regression, MLP Neural Networks, Random Forests and several validated early warning scores. Each model's performance metrics are then compared (`result_*.csv`), in addition to an overall variable importance ranking using Random Forests (`importances_*.csv`).
+
 
 ## Acknowledgements
 
 ## Citation
+
+Xie, F., Zhou, J., Lee, J.W., Tan, M., Li, S., Rajnthern, L.S., Chee, M.L., Chakraborty, B., Wong, A.I., Dagan, A., Ong, M.E., Gao, F., & Liu, N. (2021). Benchmarking Predictive Risk Models for Emergency Departments with Large Public Electronic Health Records. <https://arxiv.org/abs/2111.11017>
 
 
