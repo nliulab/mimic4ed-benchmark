@@ -784,7 +784,7 @@ def add_score_SERP30d(df):
     print("Variable 'Score_SERP30d' succeffully added")
     
     
-def PlotROCCurve(probs,y_test_roc, ci= 95):
+def PlotROCCurve(probs,y_test_roc, ci= 95, random_seed=0):
     
     fpr, tpr, threshold = metrics.roc_curve(y_test_roc,probs)
     roc_auc = metrics.auc(fpr, tpr)
@@ -798,7 +798,7 @@ def PlotROCCurve(probs,y_test_roc, ci= 95):
     print("Sensitivity:",sensitivity)
     print("Specificity:",specificity)
     print("Score thresold:",threshold)
-    lower_auroc, upper_auroc, std_auroc, lower_ap, upper_ap, std_ap, lower_sensitivity, upper_sensitivity, std_sensitivity, lower_specificity, upper_specificity, std_specificity = auc_with_ci(probs,y_test_roc, lower = (100-ci)/2, upper = 100-(100-ci)/2, n_bootstraps=200)
+    lower_auroc, upper_auroc, std_auroc, lower_ap, upper_ap, std_ap, lower_sensitivity, upper_sensitivity, std_sensitivity, lower_specificity, upper_specificity, std_specificity = auc_with_ci(probs,y_test_roc, lower = (100-ci)/2, upper = 100-(100-ci)/2, n_bootstraps=20, rng_seed=random_seed)
 
 
     plt.title('Receiver Operating Characteristic: AUC={0:0.4f}'.format(
@@ -865,7 +865,7 @@ def auc_with_ci(probs,y_test_roc, lower = 2.5, upper = 97.5, n_bootstraps=200, r
     return lower_auroc, upper_auroc, std_auroc, lower_ap, upper_ap, std_ap, lower_sensitivity, upper_sensitivity, std_sensitivity, lower_specificity, upper_specificity, std_specificity
 
 
-def plot_confidence_interval(dataset, metric= 'auroc', ci=95, name = 'AUROC', my_file = 'AUROC_hosp.eps', my_path = 'my_path'):
+def plot_confidence_interval(dataset, metric= 'auroc', ci=95, name = 'AUROC', my_file = 'AUROC_hosp.eps', my_path = 'my_path', dpi=300):
     ci_list = [dataset['lower_'+metric].values.tolist(),dataset['upper_'+metric].values.tolist()]
     std = [(dataset[metric]-dataset['std_'+metric]).values.tolist(), (dataset[metric]+dataset['std_'+metric]).values.tolist()]
     auc = dataset[metric].values.tolist()
@@ -876,6 +876,6 @@ def plot_confidence_interval(dataset, metric= 'auroc', ci=95, name = 'AUROC', my
     plt.plot(auc,y[0],'|k', markersize=4)
     plt.xlabel(name)
     plt.yticks(range(len(dataset)),list(dataset['Model']))
-    plt.savefig(os.path.join(my_path, my_file), format='eps')
+    plt.savefig(os.path.join(my_path, my_file), format='eps', dpi=dpi)
     
     plt.show()
