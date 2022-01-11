@@ -465,11 +465,11 @@ def add_score_CCI(df):
     values = [0, 1, 2, 3, 4]
     df['score_CCI'] = np.select(conditions, values)    
     df['score_CCI'] = df['score_CCI'] + df['cci_MI'] + df['cci_CHF'] + df['cci_PVD'] + df['cci_Stroke'] + df['cci_Dementia'] + df['cci_Pulmonary'] + df['cci_PUD'] + df['cci_Rheumatic'] +df['cci_Liver1']*1 + df['cci_Liver2']*3 + df['cci_DM1'] + df['cci_DM2']*2 +df['cci_Paralysis']*2 + df['cci_Renal']*2 + df['cci_Cancer1']*2 + df['cci_Cancer2']*6 + df['cci_HIV']*6
-    print("Variable 'add_score_CCI' succeffully added")
+    print("Variable 'add_score_CCI' successfully added")
 
 def add_triage_MAP(df):
     df['triage_MAP'] = df['triage_sbp']*1/3 + df['triage_dbp']*2/3
-    print("Variable 'add_triage_MAP' succeffully added")
+    print("Variable 'add_triage_MAP' successfully added")
 
 def add_score_REMS(df):
     conditions1 = [
@@ -517,7 +517,7 @@ def add_score_REMS(df):
     ]
     values5 = [4, 3, 1, 0]
     df['score_REMS'] = np.select(conditions1, values1) + np.select(conditions2, values2) + np.select(conditions3, values3) +                              np.select(conditions4, values4) + np.select(conditions5, values5)
-    print("Variable 'Score_REMS' succeffully added")
+    print("Variable 'Score_REMS' successfully added")
     
 def add_score_CART(df):
     conditions1 = [
@@ -548,7 +548,7 @@ def add_score_CART(df):
     ]
     values4 = [0, 4, 6, 13]
     df['score_CART'] = np.select(conditions1, values1) + np.select(conditions2, values2) + np.select(conditions3, values3) +                              np.select(conditions4, values4)
-    print("Variable 'Score_CART' succeffully added")
+    print("Variable 'Score_CART' successfully added")
     
 def add_score_NEWS(df):
     conditions1 = [
@@ -592,7 +592,7 @@ def add_score_NEWS(df):
     ]
     values5 = [3, 1, 0, 1, 2, 3]    
     df['score_NEWS'] = np.select(conditions1, values1) + np.select(conditions2, values2) + np.select(conditions3, values3) +                              np.select(conditions4, values4) + np.select(conditions5, values5)
-    print("Variable 'Score_NEWS' succeffully added")
+    print("Variable 'Score_NEWS' successfully added")
     
 def add_score_NEWS2(df):   
     conditions1 = [
@@ -629,7 +629,7 @@ def add_score_NEWS2(df):
     ]
     values4 = [3, 1, 0, 1, 2, 3]   
     df['score_NEWS2'] = np.select(conditions1, values1) + np.select(conditions2, values2) + np.select(conditions3, values3) +                              np.select(conditions4, values4)
-    print("Variable 'Score_NEWS2' succeffully added")
+    print("Variable 'Score_NEWS2' successfully added")
     
 def add_score_MEWS(df):     
     conditions1 = [
@@ -664,7 +664,7 @@ def add_score_MEWS(df):
     ]
     values4 = [2, 0, 2]        
     df['score_MEWS'] = np.select(conditions1, values1) + np.select(conditions2, values2) + np.select(conditions3, values3) +                              np.select(conditions4, values4) 
-    print("Variable 'Score_MEWS' succeffully added")
+    print("Variable 'Score_MEWS' successfully added")
     
 def add_score_SERP2d(df): 
     conditions1 = [
@@ -708,7 +708,7 @@ def add_score_SERP2d(df):
     ]
     values6 = [7, 5, 0]
     df['score_SERP2d'] = np.select(conditions1, values1) + np.select(conditions2, values2) + np.select(conditions3, values3) +                              np.select(conditions4, values4) + np.select(conditions5, values5) + np.select(conditions6, values6)
-    print("Variable 'Score_SERP2d' succeffully added")
+    print("Variable 'Score_SERP2d' successfully added")
 
 def add_score_SERP7d(df): 
     conditions1 = [
@@ -746,7 +746,7 @@ def add_score_SERP7d(df):
     ]
     values5 = [4, 0, 2]
     df['score_SERP7d'] = np.select(conditions1, values1) + np.select(conditions2, values2) + np.select(conditions3, values3) +                              np.select(conditions4, values4) + np.select(conditions5, values5)
-    print("Variable 'Score_SERP7d' succeffully added")
+    print("Variable 'Score_SERP7d' successfully added")
     
 def add_score_SERP30d(df): 
     conditions1 = [
@@ -784,7 +784,7 @@ def add_score_SERP30d(df):
     ]
     values5 = [3, 0, 2]
     df['score_SERP30d'] = np.select(conditions1, values1) + np.select(conditions2, values2) + np.select(conditions3, values3) +                              np.select(conditions4, values4) + np.select(conditions5, values5) + df['cci_Cancer1']*6 + df['cci_Cancer2']*12
-    print("Variable 'Score_SERP30d' succeffully added")
+    print("Variable 'Score_SERP30d' successfully added")
     
     
 def PlotROCCurve(probs,y_test_roc, ci= 95, random_seed=0):
