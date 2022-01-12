@@ -2,6 +2,8 @@ import pandas as pd
 from datetime import timedelta
 from medcodes import charlson, elixhauser
 from medcodes.diagnoses.icd_conversion import convert_9to10_list, convert_10to9_list
+import os
+import pickle
 
 cci_var_map = {
     'myocardial infarction': 'cci_MI',
@@ -145,6 +147,18 @@ def icd_list(df_edstays, df_diagnoses, df_admissions, timerange, version=9, digi
         diagnoses_record.append({'stay_id':stay_ids[i], 'icd_list': codes, 'icd_encoded_list':index_codes})
     df_icd_list = pd.DataFrame.from_records(diagnoses_record)
     return df_icd_list, icd_encode_mapping
+
+def extract_icd_list(df_edstays, df_diagnoses, df_admissions, output_path, timerange = 356*5, version = 'v9_3digit'):
+    if version == 'v9_3digit':
+        df_icd_list, icd_encode_map = icd_list(df_edstays, df_diagnoses, df_admissions, timerange = timerange, version = 9, digit3=True)
+    elif version == 'v9':
+        df_icd_list, icd_encode_map = icd_list(df_edstays, df_diagnoses, df_admissions, timerange = timerange, version = 9, digit3=False)
+    elif version == 'v10':
+        df_icd_list, icd_encode_map = icd_list(df_edstays, df_diagnoses, df_admissions, timerange = timerange, version = 10, digit3=False)
+    df_icd_list.to_csv(os.path.join(output_path, 'icd_list_dataset_'+version+'.csv'), index=False)
+    with open(os.path.join(output_path, 'icd_encode_map_'+version),'wb') as f:
+        pickle.dump(icd_encode_map,f)
+    print('Number of unique ICD codes '+version+': ', len(icd_encode_map))
 
 
 def commorbidity(df_master, df_diagnoses, df_admissions, timerange):
