@@ -1,6 +1,6 @@
 import argparse
 from helpers import *
-from medcode_utils import commorbidity
+from medcode_utils import commorbidity, icd_list
 
 parser = argparse.ArgumentParser(description='Extract per-subject data from MIMIC-III CSV files.')
 
@@ -95,6 +95,15 @@ df_master = encode_chief_complaints(df_master, complaint_dict)
 
 # This function takes about 10 min
 df_master = commorbidity(df_master, df_diagnoses, df_admissions, timerange = 356*5)
+
+# Extract ICD list for Med2Vec embedding
+version = 'v9_3digit'
+df_icd_list, icd_encode_map = icd_list(df_edstays, df_diagnoses, df_admissions, timerange = 356*5, digit3=True)
+df_icd_list.to_csv(os.path.join(output_path, 'icd_list_dataset_'+version+'.csv'), index=False)
+import pickle
+with open(os.path.join(output_path, 'icd_encode_map_'+version),'wb') as f:
+    pickle.dump(icd_encode_map,f)
+print('Number of unique ICD codes '+version+': ', len(icd_encode_map))
 
 # Merging with vitalsign info
 df_master = merge_vitalsign_info_on_edstay(df_master, df_vitalsign, options=['last'])
