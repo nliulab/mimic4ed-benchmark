@@ -58,7 +58,7 @@ df_master = add_before_ed_mortality(df_master)
 df_master = add_ed_los(df_master)
 df_master = add_outcome_icu_transfer(df_master, df_icustays, icu_transfer_timerange)
 df_master['outcome_hospitalization'] = ~pd.isnull(df_master['hadm_id'])
-df_master['outcome_critical'] = df_master['outcome_inhospital_mortality'] | df_master['outcome_icu_transfer_12h']
+df_master['outcome_critical'] = df_master['outcome_inhospital_mortality'] | df_master[''.join(['outcome_icu_transfer_', str(icu_transfer_timerange), 'h'])]
 
 # Sort Master table for further process
 df_master = df_master.sort_values(['subject_id', 'intime']).reset_index()
