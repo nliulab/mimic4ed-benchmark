@@ -144,6 +144,8 @@ def fill_na_ethnicity(df_master): # requires df_master to be sorted
             next_subject= df_master['subject_id'][next_subject_idx] if next_subject_idx <= (N-1) else None
             prev_subject= df_master['subject_id'][prev_subject_idx] if prev_subject_idx >= 0 else None
 
+            subject_ethnicity_list.append(df_master['ethnicity'][i]) ## add current ethnicity to list
+
             while prev_subject == curr_subject:
                 subject_ethnicity_list.append(df_master['ethnicity'][prev_subject_idx])
                 prev_subject_idx -= 1
@@ -154,17 +156,15 @@ def fill_na_ethnicity(df_master): # requires df_master to be sorted
                 next_subject_idx += 1
                 next_subject= df_master['subject_id'][next_subject_idx] if next_subject_idx <= (N-1) else None
         
-            eth_set = set(subject_ethnicity_list)
+            eth_counter_list = collections.Counter(subject_ethnicity_list).most_common() #sorts counter and outputs list
             
-            if len(eth_set) == 0: ## no previous or next entries 
+            if len(eth_counter_list) == 0: ## no previous or next entries 
                 subject_eth = curr_eth
-            elif len(eth_set) == 1: ## exactly one other non-NA ethnicity
-                subject_eth = eth_set.pop()
+            elif len(eth_counter_list) == 1: ## exactly one other ethnicity
+                subject_eth = eth_counter_list.pop(0)[0] ## extract ethnicity from count tuple
             else:
-                eth_set = {x for x in eth_set if pd.notna(x)} # remove any NA
-                if "OTHER" in eth_set and len(eth_set) > 1: # Contains OTHER + another ethnicity
-                    eth_set.remove("OTHER") # remove OTHER
-                subject_eth = eth_set.pop()
+                eth_counter_list = [x for x in eth_counter_list if pd.notna(x[0])] # remove any NA
+                subject_eth = eth_counter_list.pop(0)[0]
             
             ethnicity_dict[curr_subject] = subject_eth ## store in dict
     
