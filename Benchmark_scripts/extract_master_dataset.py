@@ -1,6 +1,6 @@
 import argparse
 from helpers import *
-from medcode_utils import commorbidity
+from medcode_utils import commorbidity, extract_icd_list
 
 parser = argparse.ArgumentParser(description='Extract per-subject data from MIMIC-III CSV files.')
 
@@ -58,7 +58,7 @@ df_master = add_before_ed_mortality(df_master)
 df_master = add_ed_los(df_master)
 df_master = add_outcome_icu_transfer(df_master, df_icustays, icu_transfer_timerange)
 df_master['outcome_hospitalization'] = ~pd.isnull(df_master['hadm_id'])
-df_master['outcome_critical'] = df_master['outcome_inhospital_mortality'] | df_master['outcome_icu_transfer_12h']
+df_master['outcome_critical'] = df_master['outcome_inhospital_mortality'] | df_master[''.join(['outcome_icu_transfer_', str(icu_transfer_timerange), 'h'])]
 
 # Sort Master table for further process
 df_master = df_master.sort_values(['subject_id', 'intime']).reset_index()
@@ -95,6 +95,9 @@ df_master = encode_chief_complaints(df_master, complaint_dict)
 
 # This function takes about 10 min
 df_master = commorbidity(df_master, df_diagnoses, df_admissions, timerange = 356*5)
+extract_icd_list(df_edstays, df_diagnoses, df_admissions, output_path, timerange = 356*5, version = 'v9')
+extract_icd_list(df_edstays, df_diagnoses, df_admissions, output_path, timerange = 356*5, version = 'v9_3digit')
+extract_icd_list(df_edstays, df_diagnoses, df_admissions, output_path, timerange = 356*5, version = 'v10')
 
 # Merging with vitalsign info
 df_master = merge_vitalsign_info_on_edstay(df_master, df_vitalsign, options=['last'])

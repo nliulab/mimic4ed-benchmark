@@ -1,7 +1,9 @@
 import pandas as pd
 from datetime import timedelta
 from medcodes import charlson, elixhauser
-from medcodes.diagnoses._mappers import elixhauser_charlson
+from medcodes.diagnoses.icd_conversion import convert_9to10_list, convert_10to9_list
+import os
+import pickle
 
 cci_var_map = {
     'myocardial infarction': 'cci_MI',
@@ -92,6 +94,71 @@ def diagnosis_with_time(df_diagnoses, df_admissions):
     df_diagnoses_sorted = df_diagnoses_with_adm.sort_values(
         ['subject_id', 'dischtime']).reset_index()
     return df_diagnoses_sorted
+
+def encode_icd_to_index(codes, icd_encode_mapping):
+    encoded_list = []
+    for code in codes:
+        encoded_list.append(icd_encode_mapping[code])
+    return encoded_list
+
+def icd_list(df_edstays, df_diagnoses, df_admissions, timerange, version=9, digit3=False):
+    timerange = timedelta(days=timerange)
+    icd_set = set({})
+    df_diagnoses_sorted = diagnosis_with_time(df_diagnoses, df_admissions)
+    j_start = 0
+    j_end = 0
+    prev_subject = None
+    diagnoses = []
+    stay_ids = []
+    # Loop through ED visits
+    for i, row in df_edstays.iterrows():
+        if i % 10000 == 0:
+            print('Process: %d/%d' % (i, len(df_edstays)), end='\r')
+        # If new subject, find the start and end index of same subject in sorted admission df
+        stay_ids.append(row['stay_id'])
+        if row['subject_id'] != prev_subject:
+            j_start = j_end
+            while j_start < len(df_diagnoses_sorted) and df_diagnoses_sorted['subject_id'][j_start] < row['subject_id']:
+                j_start += 1
+            j_end = j_start
+
+            while j_end < len(df_diagnoses_sorted) and df_diagnoses_sorted['subject_id'][j_end] == row['subject_id']:
+                j_end += 1
+            prev_subject = row['subject_id']
+        # Count number of previous admissions within the time range
+        icd_list = []
+        version_list = []
+        for j in range(j_start, j_end):
+            if row['intime'] > df_diagnoses_sorted['dischtime'][j] and row['intime']-df_diagnoses_sorted['dischtime'][j] <= timerange:
+                icd_list.append(df_diagnoses_sorted.loc[j, 'icd_code'])
+                version_list.append(df_diagnoses_sorted.loc[j, 'icd_version'])
+        if version==10:
+            icd_list = set(convert_9to10_list(icd_list, version_list))
+        else:
+            icd_list = set(convert_10to9_list(icd_list, version_list, digit3=digit3))
+        diagnoses.append(icd_list)
+        icd_set.update(icd_list)
+    
+    icd_encode_mapping = {code:i for i, code in enumerate(icd_set)}
+
+    diagnoses_record = []
+    for i, codes in enumerate(diagnoses):
+        index_codes = encode_icd_to_index(codes, icd_encode_mapping)    
+        diagnoses_record.append({'stay_id':stay_ids[i], 'icd_list': codes, 'icd_encoded_list':index_codes})
+    df_icd_list = pd.DataFrame.from_records(diagnoses_record)
+    return df_icd_list, icd_encode_mapping
+
+def extract_icd_list(df_edstays, df_diagnoses, df_admissions, output_path, timerange = 356*5, version = 'v9_3digit'):
+    if version == 'v9_3digit':
+        df_icd_list, icd_encode_map = icd_list(df_edstays, df_diagnoses, df_admissions, timerange = timerange, version = 9, digit3=True)
+    elif version == 'v9':
+        df_icd_list, icd_encode_map = icd_list(df_edstays, df_diagnoses, df_admissions, timerange = timerange, version = 9, digit3=False)
+    elif version == 'v10':
+        df_icd_list, icd_encode_map = icd_list(df_edstays, df_diagnoses, df_admissions, timerange = timerange, version = 10, digit3=False)
+    df_icd_list.to_csv(os.path.join(output_path, 'icd_list_dataset_'+version+'.csv'), index=False)
+    with open(os.path.join(output_path, 'icd_encode_map_'+version),'wb') as f:
+        pickle.dump(icd_encode_map,f)
+    print('Number of unique ICD codes '+version+': ', len(icd_encode_map))
 
 
 def commorbidity(df_master, df_diagnoses, df_admissions, timerange):

@@ -48,7 +48,7 @@ Prior to these steps, this repository, MIMIC-IV-ED and MIMIC-IV should be downlo
 
 ### 1. Benchmark Data Generation
 ~~~
-python extract_master_dataset.py --mimic4_path {mimic4_path} --output_path {output_path} --icu_transfer_timerange {icu_transfer_timerange} --next_ed_visit_timerange {next_ed_visit_timerange}
+python extract_master_dataset.py --mimic4_path {mimic4_path} --output_path {output_path}
 ~~~
 
 **Arguements**:
