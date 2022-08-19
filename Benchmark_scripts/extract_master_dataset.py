@@ -22,6 +22,7 @@ mimic_iv_hosp_path = os.path.join(mimic_iv_path , 'hosp')
 mimic_iv_icu_path = os.path.join(mimic_iv_path, 'icu')
 mimic_iv_ed_path = os.path.join(mimic_iv_path, 'ed')
 
+   
 icu_filename_dict = {"chartevents":"chartevents.csv","datetimeevents":"datetimeevents.csv","d_items":"d_items.csv","icustays":"icustays.csv","inputevents":"inputevents.csv","outputevents":"outputevents.csv","procedureevents":"procedureevents.csv"}
 core_filename_dict = {"patients":"patients.csv", "admissions":"admissions.csv", "transfers":"transfers.csv"}
 hosp_filename_dict = {"d_hcpcs":"d_hcpcs.csv","d_icd_diagnoses":"d_icd_diagnoses.csv","d_labitems":"d_labitems.csv","emar":"emar.csv","hcpcsevents":"hcpcsevents.csv","microbiologyevents":"microbiologyevents.csv","poe":"poe.csv","prescriptions":"prescriptions.csv","services":"services.csv","diagnoses_icd":"diagnoses_icd.csv","d_icd_procedures":"d_icd_procedures.csv","drgcodes":"drgcodes.csv","emar_detail":"emar_detail.csv","labevents":"labevents.csv","pharmacy":"pharmacy.csv","poe_detail":"poe_detail.csv","procedures_icd":"procedures_icd.csv"}
@@ -33,8 +34,12 @@ complaint_dict = {"chiefcom_chest_pain" : "chest pain", "chiefcom_abdominal_pain
 
 ## Reading main tables
 df_edstays = read_edstays_table(os.path.join(mimic_iv_ed_path, ed_filename_dict['edstays']))
-df_patients = read_patients_table(os.path.join(mimic_iv_core_path, core_filename_dict['patients']))
-df_admissions = read_admissions_table(os.path.join(mimic_iv_core_path, core_filename_dict["admissions"]))
+if os.path.exists(mimic_iv_core_path):
+    df_patients = read_patients_table(os.path.join(mimic_iv_core_path, core_filename_dict['patients']))
+    df_admissions = read_admissions_table(os.path.join(mimic_iv_core_path, core_filename_dict["admissions"]))
+else:
+    df_patients = read_patients_table(os.path.join(mimic_iv_hosp_path, core_filename_dict['patients']))
+    df_admissions = read_admissions_table(os.path.join(mimic_iv_hosp_path, core_filename_dict["admissions"]))
 df_icustays = read_icustays_table(os.path.join(mimic_iv_icu_path, icu_filename_dict['icustays']))
 df_triage = read_triage_table(os.path.join(mimic_iv_ed_path, ed_filename_dict['triage']))
 df_vitalsign = read_vitalsign_table(os.path.join(mimic_iv_ed_path, ed_filename_dict['vitalsign']))

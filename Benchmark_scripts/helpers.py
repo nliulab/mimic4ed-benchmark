@@ -10,6 +10,22 @@ from sklearn.metrics import precision_recall_curve, average_precision_score
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.utils import Sequence
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+import collections
+
+def convert_str_to_float(x):
+    if isinstance(x, str):
+        x_split = re.compile('[^a-zA-Z0-9-]').split(x.strip())
+        if '-' in x_split[0]:
+            x_split_dash = x_split[0].split('-')
+            if len(x_split_dash) == 2 and x_split_dash[0].isnumeric() and x_split_dash[1].isnumeric():
+                return (float(x_split_dash[0]) + float(x_split_dash[1])) / 2
+            else:
+                return np.nan
+        else:
+            if x_split[0].isnumeric():
+                return float(x_split[0])
+            else:
+                return np.nan
 
 def read_edstays_table(edstays_table_path):
     df_edstays = pd.read_csv(edstays_table_path)
@@ -24,6 +40,7 @@ def read_patients_table(patients_table_path):
 
 def read_admissions_table(admissions_table_path):
     df_admissions = pd.read_csv(admissions_table_path)
+    df_admissions = df_admissions.rename(columns={"race": "ethnicity"})
     df_admissions =  df_admissions[['subject_id', 'hadm_id', 'admittime', 'dischtime', 'deathtime','ethnicity', 'edregtime','edouttime', 'insurance']]
     df_admissions['admittime'] = pd.to_datetime(df_admissions['admittime'])
     df_admissions['dischtime'] = pd.to_datetime(df_admissions['dischtime'])
@@ -40,6 +57,8 @@ def read_triage_table(triage_table_path):
     df_triage = pd.read_csv(triage_table_path)
     vital_rename_dict = {vital: '_'.join(['triage', vital]) for vital in ['temperature', 'heartrate', 'resprate', 'o2sat', 'sbp', 'dbp', 'pain', 'acuity']}
     df_triage.rename(vital_rename_dict, axis=1, inplace=True)
+    df_triage['triage_pain'] = df_triage['triage_pain'].apply(convert_str_to_float).astype(float)
+
     return df_triage
 
 def read_diagnoses_table(diagnoses_table_path):
@@ -52,21 +71,6 @@ def read_vitalsign_table(vitalsign_table_path):
                          ['temperature', 'heartrate', 'resprate', 'o2sat', 'sbp', 'dbp', 'rhythm', 'pain']}
     df_vitalsign.rename(vital_rename_dict, axis=1, inplace=True)
 
-    def convert_str_to_float(x):
-        if isinstance(x, str):
-            x_split = re.compile('[^a-zA-Z0-9-]').split(x.strip())
-            if '-' in x_split[0]:
-                x_split_dash = x_split[0].split('-')
-                if len(x_split_dash) == 2 and x_split_dash[0].isnumeric() and x_split_dash[1].isnumeric():
-                    return (float(x_split_dash[0]) + float(x_split_dash[1])) / 2
-                else:
-                    return np.nan
-            else:
-                if x_split[0].isnumeric():
-                    return float(x_split[0])
-                else:
-                    return np.nan
-
     df_vitalsign['ed_pain'] = df_vitalsign['ed_pain'].apply(convert_str_to_float).astype(float)
     return df_vitalsign
 
@@ -75,7 +79,10 @@ def read_pyxis_table(pyxis_table_path):
     return df_pyxis
 
 def merge_edstays_patients_on_subject(df_edstays,df_patients):
-    df_edstays = pd.merge(df_edstays, df_patients[['subject_id', 'anchor_age', 'gender', 'anchor_year','dod']], on = ['subject_id'], how='left')
+    if 'gender' in df_edstays.columns:
+        df_edstays = pd.merge(df_edstays, df_patients[['subject_id', 'anchor_age', 'anchor_year','dod']], on = ['subject_id'], how='left')
+    else:
+        df_edstays = pd.merge(df_edstays, df_patients[['subject_id', 'anchor_age', 'gender', 'anchor_year','dod']], on = ['subject_id'], how='left')
     return df_edstays
 
 def merge_edstays_admissions_on_subject(df_edstays ,df_admissions):
