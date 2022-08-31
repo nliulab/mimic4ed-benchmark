@@ -28,7 +28,7 @@ def convert_str_to_float(x):
                 return np.nan
     else:
         return x
-
+        
 def read_edstays_table(edstays_table_path):
     df_edstays = pd.read_csv(edstays_table_path)
     df_edstays['intime'] = pd.to_datetime(df_edstays['intime'])

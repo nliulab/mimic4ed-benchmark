@@ -52,7 +52,7 @@ df_missing_stats.index = ['no. of missing values', 'percentage of missing values
 vitals_cols = [col for col in df_master.columns if len(col.split('_')) > 1 and 
                                                    col.split('_')[1] in vitals_valid_range]
 
-imputer = SimpleImputer(strategy='mean')
+imputer = SimpleImputer(strategy='median')
 df_train[vitals_cols] = imputer.fit_transform(df_train[vitals_cols])
 df_test[vitals_cols] = imputer.transform(df_test[vitals_cols])
 
