@@ -102,18 +102,8 @@ def add_age(df_master):
     return df_master
 
 def add_inhospital_mortality(df_master):
-    inhospital_mortality = df_master['dod'].notnull() & ((df_master['intime'] <= df_master['dod']) & (df_master['dischtime'] >= df_master['dod']))
+    inhospital_mortality = df_master['dod'].notnull() & (df_master['dischtime'] >= df_master['dod'])
     df_master['outcome_inhospital_mortality'] = inhospital_mortality
-    return df_master
-
-def add_ed_mortality(df_master):
-    ed_mortality = df_master['deathtime'].notnull() & ((df_master['intime'] <= df_master['deathtime']) & (df_master['outtime'] >= df_master['deathtime']))
-    df_master['ed_death'] = ed_mortality
-    return df_master
-
-def add_before_ed_mortality(df_master):
-    before_ed_mortality = df_master['deathtime'].notnull() & (df_master['intime'] > df_master['deathtime'])
-    df_master['before_ed_mortality'] = before_ed_mortality
     return df_master
 
 def add_ed_los(df_master):
