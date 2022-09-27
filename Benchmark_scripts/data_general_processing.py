@@ -31,7 +31,14 @@ vitals_valid_range = {
 df_master = pd.read_csv(os.path.join(master_dataset_path, 'master_dataset.csv'))
 
 # Filtering Age < 18
+print('Before filtering for "age" >= 18 : master dataset size = ', len(df_master))
 df_master = df_master[df_master['age'] >= 18]
+print('After filtering for "age" >= 18 : master dataset size = ', len(df_master))
+
+# Filtering for non-null triage acuity
+print('Before filtering for non-null "triage_acuity" >= 18 : master dataset size = ', len(df_master))
+df_master = df_master[df_master['triage_acuity'].notnull()]
+print('After filtering for non-null "triage_acuity" >= 18 : master dataset size = ', len(df_master))
 
 # Outlier detection and removal
 df_master = convert_temp_to_celcius(df_master)
