@@ -1,7 +1,7 @@
 MIMIC-IV-ED Benchmark
 =========================
 
-Python workflow for generating benchmark datasets and machine learning models from the MIMIC-IV-ED database. See our preprint <https://arxiv.org/abs/2111.11017> for the whole story.
+Python workflow for generating benchmark datasets and machine learning models from the MIMIC-IV-ED database. See our [Scientific Data](https://www.nature.com/articles/s41597-022-01782-9) article for the whole story.
 
 ## Table of contents
 * [General info](#general-info)
@@ -115,6 +115,6 @@ For each ED prediction task, various models are implemented and compared. These 
 
 ## Citation
 
-Xie, F., Zhou, J., Lee, J.W., Tan, M., Li, S., Rajnthern, L.S., Chee, M.L., Chakraborty, B., Wong, A.I., Dagan, A., Ong, M.E., Gao, F., & Liu, N. (2021). Benchmarking Predictive Risk Models for Emergency Departments with Large Public Electronic Health Records. <https://arxiv.org/abs/2111.11017>
+Xie F, Zhou J, Lee JW, Tan M, Li SQ, Rajnthern L, Chee ML, Chakraborty B, Wong AKI, Dagan A, Ong MEH, Gao F, Liu N. Benchmarking emergency department triage prediction models with machine learning and large public electronic health records. Scientific Data 2022 Oct; 9: 658. <https://doi.org/10.1038/s41597-022-01782-9>
 
 
