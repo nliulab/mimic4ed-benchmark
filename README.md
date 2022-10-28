@@ -11,7 +11,6 @@ Python workflow for generating benchmark datasets and machine learning models fr
     1. [Benchmark Data Generation](#1-benchmark-data-generation)
     2. [Cohort Filtering](#2-cohort-filtering-and-data-processing)
     3. [Prediction Task and Model Selection](#3-prediction-task-selection-and-model-evaluation)
-* [Acknowledgements](#acknowledgements)
 * [Citation](#citation)
 
 ## General info
