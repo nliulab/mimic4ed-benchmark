@@ -111,7 +111,6 @@ Prediction modelling is currently handled by python notebooks (.ipynb files) tha
 For each ED prediction task, various models are implemented and compared. These include: Logistic Regression, MLP Neural Networks, Random Forests and several validated early warning scores. Each model's performance metrics are then compared (`result_*.csv`), in addition to an overall variable importance ranking using Random Forests (`importances_*.csv`).
 
 
-## Acknowledgements
 
 ## Citation
 
